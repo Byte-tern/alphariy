@@ -49,7 +49,7 @@ export function classify(c: Ctx, now = '2026-10-27') {
 export function rankScore(c: Ctx, old: number) {
   const urgency = c.segment === 'C1' ? Math.max(0, Math.min(1, 1 - ((c.monthsToDue ?? 12) - 1) / 11)) : 0.6 + (c.stages >= 3 ? 0.4 : 0)
   const intent = { high: 1, mid: .6, low: .3, none: .2 }[c.activity]
-  const parts = [['look-alike (старые признаки)', RANK_W.old * old], ['срочность / подтверждённость (сигналы 1, 5, 6, 8)', RANK_W.urgency * urgency], ['цифровое намерение (сигнал 13)', RANK_W.intent * intent]] as [string, number][]
+  const parts = [['look-alike, старые признаки', RANK_W.old * old, '#8C8C94'], ['срочность и подтверждённость', RANK_W.urgency * urgency, '#EF3124'], ['цифровое намерение', RANK_W.intent * intent, '#C8231A']] as [string, number, string][]
   return { score: parts.reduce((s, [, v]) => s + v, 0), parts }
 }
 
@@ -68,11 +68,11 @@ export function run(n = 10000, topPct = 0.03) {
   const fin = afterAlt.filter(x => x.k === 'ok')
   const newShown = fin.map(x => ({ ...x, rank: rankScore(x.co.ctx, x.co.oldScore) })).sort((a, b) => b.rank.score - a.rank.score).slice(0, K)
   const stages = [
-    { id: 1, title: 'Бизнес-пре-фильтр', model: 'Жёсткие правила до модели', features: 'Сигналы 1, 5, 6, 8 (потребность и окно), 13 + история отказов', rules: 'E01–E04, R02–R04, S01', inN: n, outN: pre.length, isNew: true },
-    { id: 2, title: 'Генерация кандидатов', model: 'Look-alike (действующая, в демо — заглушка)', features: 'Сотни старых признаков: обороты, ОКВЭД, остатки', rules: '—', inN: pre.length, outN: cand.length, isNew: false },
-    { id: 3, title: 'Ранжирование', model: 'Скор + ручные веса новых сигналов (в проде — бустинг)', features: `Look-alike ${RANK_W.old}, срочность ${RANK_W.urgency}, намерение ${RANK_W.intent}`, rules: 'порядок, без отсева', inN: cand.length, outN: cand.length, isNew: true },
-    { id: 4, title: 'Доранжирование и выбор инструмента', model: 'Правила применимости + сравнение вариантов', features: 'Сигналы 2, 3, 6, 9, 11: срок, сумма, отрасль, готовность', rules: 'E05–E11', inN: cand.length, outN: afterAlt.length, isNew: true },
-    { id: 5, title: 'Пост-фильтр: адресат и лимиты', model: 'Правила ЛПР и политика контактов', features: 'Сигнал 12 (роль, полномочия), лимиты 5/30 дн., email 1/60', rules: 'U01, P01, лимиты', inN: afterAlt.length, outN: fin.length, isNew: true },
+    { id: 1, title: 'Бизнес-пре-фильтр', model: 'Жёсткие правила до модели', features: 'Потребность и окно погашения, история отказов', rules: 'E01–E04, R02–R04, S01', inN: n, outN: pre.length, isNew: true },
+    { id: 2, title: 'Генерация кандидатов', model: 'Look-alike банка (в демо — заглушка)', features: 'Сотни старых признаков: обороты, ОКВЭД, остатки', rules: '—', inN: pre.length, outN: cand.length, isNew: false },
+    { id: 3, title: 'Ранжирование', model: 'Скор + ручные веса новых сигналов (в проде — бустинг)', features: `look-alike ${RANK_W.old}, срочность ${RANK_W.urgency}, намерение ${RANK_W.intent}`, rules: 'меняет порядок, не отсеивает', inN: cand.length, outN: cand.length, isNew: true },
+    { id: 4, title: 'Выбор инструмента', model: 'Правила применимости + сравнение', features: 'Срок, сумма, отрасль, готовность к выпуску', rules: 'E05–E12', inN: cand.length, outN: afterAlt.length, isNew: true },
+    { id: 5, title: 'Пост-фильтр: адресат и лимиты', model: 'Правила ЛПР и политика контактов', features: 'Роль, права, лимиты 5/30 дн., email 1/60', rules: 'U01, P01, L01', inN: afterAlt.length, outN: fin.length, isNew: true },
   ]
   const nonLoan = newShown.filter(x => x.d!.instruments.some(i => i.id !== 'loan')).length
   const routed = newShown.filter(x => x.d!.action === 'route_to_authorized_user').length

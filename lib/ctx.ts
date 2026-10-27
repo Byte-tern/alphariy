@@ -2,7 +2,7 @@ import { PROFILES } from '@/data/profiles'
 import type { Ctx } from '@/lib/decision'
 
 // Переключатели панели не могут выдать право отправки: роль и права берутся только из профиля/пользователя.
-const ALLOWED = ['segment', 'industry', 'structure', 'centralized', 'activity', 'need', 'amount', 'termMonths', 'monthsToDue', 'stages', 'cfa', 'refusal', 'refusedTool', 'contacts30', 'lastEmailDays']
+const ALLOWED = ['segment', 'industry', 'structure', 'centralized', 'activity', 'need', 'amount', 'termMonths', 'monthsToDue', 'stages', 'cfa', 'bondsBefore', 'refusal', 'refusedTool', 'contacts30', 'lastEmailDays']
 
 export function buildCtx(profileId: string, userId: string, ov: Record<string, unknown> = {}, ev: Record<string, number> = {}, requestSent = false): Ctx | null {
   const p = PROFILES[profileId]; const u = p?.users.find(x => x.id === userId)

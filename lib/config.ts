@@ -4,9 +4,11 @@ export const CFG = {
   refiMin: 3, refiMax: 12,
   bondMinAmount: 300, bondMinTerm: 24,
   bondPrepMonths: 4,
+  bondProjectConsult: 500, // С2: проект от этой суммы → облигации как консультация
   syndAmount: 1000, syndStages: 3,
   rate: { loan: 0.19, bonds: 0.16 },
-  bondFee: 6,
+  bondFee: 6, bondFeeRepeat: 2, // разовые расходы выпуска; повторный выпуск дешевле
+  groupFactor: 3.2, // долг группы ≈ долг компании × коэффициент (демо), если финансы централизованы
   maxContacts30: 5, emailGapDays: 60, notNowDays: 90, ignoreDays: 60,
   backThreshold: 2, compareThreshold: 2, idleSec: 45,
 }

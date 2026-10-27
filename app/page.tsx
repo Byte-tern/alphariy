@@ -20,7 +20,7 @@ export default function Page() {
   const [busy, setBusy] = useState(false), [err, setErr] = useState(''), [ready, setReady] = useState(false), [panel, setPanel] = useState(true)
   const P = PROFILES[pid], U = P.users.find(u => u.id === uid) || P.users[0], need = `need-${pid}`
   const now = new Date(BASE + day * 864e5).toISOString().slice(0, 10)
-  const eff = { ...P.ctx, ...ov }
+  const eff: Any = { ...P.ctx, ...ov }
 
   useEffect(() => { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s?.v === 1) { setPid(s.pid); setUid(s.uid); setOv(s.ov); setDay(s.day); setReqs(s.reqs); setInbox(s.inbox) } else if (s) localStorage.removeItem(KEY) } catch {} setReady(true) }, [])
   useEffect(() => { if (ready) try { localStorage.setItem(KEY, JSON.stringify({ v: 1, pid, uid, ov, day, reqs, inbox })) } catch {} }, [ready, pid, uid, ov, day, reqs, inbox])

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { decide, cost } from '@/lib/decision'
-import { buildCtx } from '@/app/api/decision/route'
+import { buildCtx } from '@/lib/ctx'
 const run = (p: string, u: string, ov = {}, ev = {}) => decide(buildCtx(p, u, ov, ev)!, '2026-10-27')
 describe('decide', () => {
   it('формула расходов', () => { expect(cost(800, 0.19, 36)).toBeCloseTo(456); expect(cost(800, 0.16, 36, 6)).toBeCloseTo(390) })

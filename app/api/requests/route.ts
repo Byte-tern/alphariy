@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { decide } from '@/lib/decision'
-import { buildCtx } from '../decision/route'
+import { buildCtx } from '@/lib/ctx'
 
 export async function POST(req: Request) {
   try {

@@ -8,18 +8,20 @@ describe('decide', () => {
   it('границы окна 3 и 12', () => {
     expect(run('A', 'cfo', { monthsToDue: 12 }).action).toBe('show_comparison')
     expect(run('A', 'cfo', { monthsToDue: 13 }).action).toBe('suppress_marketing')
-    expect(run('A', 'cfo', { monthsToDue: 3 }).instruments.some(i => i.id === 'bonds' && i.status === 'consultation_only')).toBe(true)
+    expect(run('A', 'cfo', { monthsToDue: 3 }).instruments.some(i => i.id === 'bonds')).toBe(false)
   })
   it('нет потребности → нет рекламы; неизвестна → уточнение', () => {
     expect(run('A', 'cfo', { need: 'none' }).action).toBe('suppress_marketing')
     expect(run('A', 'cfo', { need: 'unknown' }).action).toBe('clarify_need')
   })
-  it('ЦФА: unknown не разрешает, confirmed — только консультация', () => {
-    expect(run('G', 'cfo', { cfa: 'unknown' }).instruments.some(i => i.id === 'cfa')).toBe(false)
-    expect([...run('G', 'cfo').instruments, ...run('G', 'cfo').excluded].some(i => i.id === 'cfa' && i.status === 'consultation_only')).toBe(true)
+  it('ЦФА и синдикат в цифровое предложение не входят', () => {
+    for (const ov of [{}, { cfa: 'confirmed' }, { segment: 'C2', amount: 3000, stages: 5 }]) {
+      const d = run('G', 'cfo', ov)
+      expect([...d.instruments, ...d.excluded].some(i => i.id === 'cfa' || i.id === 'synd')).toBe(false)
+    }
   })
-  it('CAPEX с этапами → синдикат; казначей без права → передача', () => {
-    expect(run('B', 'cfo').instruments.some(i => i.id === 'synd' && i.status === 'consultation_only')).toBe(true)
+  it('CAPEX в стройке → инвесткредит + контрактное финансирование; казначей без права → передача', () => {
+    expect(run('B', 'cfo').instruments.map(i => i.id)).toEqual(['loan', 'contract'])
     expect(run('A', 'treas').action).toBe('route_to_authorized_user')
     expect(run('V', 'u').action).toBe('consult_specialist')
   })
@@ -51,7 +53,8 @@ describe('decide', () => {
   it('сложные инструменты никогда не доступны в один клик', () => {
     for (const [p, u, ov] of [['A', 'cfo'], ['B', 'cfo'], ['G', 'cfo'], ['V', 'u'], ['A', 'cfo', { segment: 'C2', amount: 1200, stages: 3 }]]) {
       const d = run(p as string, u as string, ov || {})
-      expect(d.instruments.filter(i => ['bonds', 'synd', 'cfa'].includes(i.id)).every(i => i.status === 'consultation_only')).toBe(true)
+      expect(d.instruments.filter(i => i.id === 'bonds').every(i => i.status === 'consultation_only')).toBe(true)
+      expect(d.instruments.filter(i => i.id !== 'bonds').every(i => ['loan', 'refi', 'gov', 'contract'].includes(i.id))).toBe(true)
     }
   })
 })

@@ -5,7 +5,6 @@ export const CFG = {
   bondMinAmount: 300, bondMinTerm: 24,
   bondPrepMonths: 4,
   bondProjectConsult: 500, // С2: проект от этой суммы → облигации как консультация
-  syndAmount: 1000, syndStages: 3,
   rate: { loan: 0.19, refi: 0.16, bonds: 0.16 },
   refiFee: 6, // разовые расходы рефинансирования (комиссия, досрочное погашение)
   bondFee: 6, bondFeeRepeat: 2, // разовые расходы выпуска; повторный выпуск дешевле
@@ -14,7 +13,7 @@ export const CFG = {
   backThreshold: 2, compareThreshold: 2, idleSec: 45,
 }
 // source: mock — заглушка вместо выхода банковского look-alike. Это не вероятности.
-export const MOCK_SCORES: Record<string, number> = { loan: 0.62, refi: 0.55, lease: 0.5, bonds: 0.48, synd: 0.44, cfa: 0.31 }
+export const MOCK_SCORES: Record<string, number> = { loan: 0.62, refi: 0.55, contract: 0.52, gov: 0.5, bonds: 0.48 }
 // Ручные веса признаков ранжирования (идея Алана: усилить вес новых фич). Демо-допущение.
 export const RANK_W = { old: 0.35, urgency: 0.40, intent: 0.25 }
 export const CAND_KEEP = 0.7 // доля кандидатов, которую пропускает генерация кандидатов

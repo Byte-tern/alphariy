@@ -47,7 +47,6 @@ export default function DecisionView({ st, set, preset, user }: { st: St; set: (
     <div className="field"><span className="lbl">Отрасль</span><Chips idp="industry" opts={o('industry')} value={c.industry} onPick={v => set({ industry: v })} /></div>
     <div className="field"><span className="lbl">Структура бизнеса</span><Chips idp="structure" opts={o('structure')} value={c.structure} onPick={v => set({ structure: v })} /></div>
     {c.structure === 'group' && <div className="field"><span className="lbl">Финансы централизованы</span><Chips idp="centralized" opts={o('centralized')} value={c.centralized === true ? 'yes' : c.centralized === false ? 'no' : 'null'} onPick={v => set({ centralized: v === 'yes' ? true : v === 'no' ? false : null })} /></div>}
-    <div className="field"><span className="lbl">Готовность к ЦФА</span><Chips idp="cfa" opts={o('cfa')} value={c.cfa} onPick={v => set({ cfa: v })} /></div>
     <div className="field"><label className="toggle"><input id="bondsBefore" type="checkbox" checked={c.bondsBefore} onChange={e => set({ bondsBefore: e.target.checked })} /> Уже выпускали облигации</label></div>
     <div className="group-h">Поведение и история</div>
     <div className="field"><span className="lbl">Цифровая активность</span><Chips idp="activity" opts={o('activity')} value={c.activity} onPick={v => set({ activity: v })} /></div>
@@ -67,7 +66,6 @@ export default function DecisionView({ st, set, preset, user }: { st: St; set: (
   feats.push(['Структура', c.structure === 'group' ? (c.centralized === true ? 'группа, централизована' : c.centralized == null ? ['централизация неизвестна'] : 'группа, децентрализована') : c.structure === 'sub' ? 'дочка' : 'самостоятельная'])
   feats.push(['Роль и права', c.role === 'unknown' ? ['не указана в CRM'] : `${ROLE_L[c.role]} · ${c.canSend ? 'может отправить' : 'без права отправки'}`])
   feats.push(['Цифровая активность', ACT_L[c.activity]])
-  feats.push(['Готовность к ЦФА', { confirmed: 'подтверждена', unknown: 'нет данных', no: 'не подходит' }[c.cfa]])
   const rk = rankScore(c, Math.min(1, .2 + .5 * Math.min(c.amount / 1500, 1) + .15))
 
   const stop = d.action === 'suppress_marketing', sent = d.action === 'show_request_status', ask = d.action === 'clarify_need', none = stop || sent || ask

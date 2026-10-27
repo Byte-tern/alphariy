@@ -20,8 +20,9 @@ export interface Inst { id: string; name: string; status: Status; reason: string
 export interface Reason { t: RuleT; ruleId: string; fact: string; text: string }
 export interface CommStep { day: string; text: string; note: string; muted?: boolean; email?: boolean; after?: boolean }
 export type Decision = ReturnType<typeof decide>
-const NAMES: Record<string, string> = { loan: 'Кредит', refi: 'Рефинансирование кредитом', lease: 'Лизинг оборудования', bonds: 'Облигации', synd: 'Синдицированный кредит', cfa: 'Денежные ЦФА' }
-// Пилот: средний бизнес. Облигации, синдикат и ЦФА — только консультация через клиентского менеджера (сделка не оформляется в один клик)
+const NAMES: Record<string, string> = { loan: 'Кредит', refi: 'Оборотный кредит на новых условиях', gov: 'Кредит по льготной ставке (господдержка)', contract: 'Контрактное финансирование', bonds: 'Выпуск облигаций' }
+// Пилот: средний бизнес (выручка от 500 млн ₽). В сравнении — кредитные продукты банка из личного кабинета.
+// Облигации — только консультация с менеджером для крупных. Синдицированный кредит и ЦФА в цифровое предложение не входят.
 
 // условные расходы = сумма × ставка × срок/12 + разовые (млн ₽)
 export const cost = (a: number, r: number, t: number, fee = 0) => a * r * t / 12 + fee
@@ -107,36 +108,25 @@ export function decide(c: Ctx, now: string) {
   const groupDebt = grp ? c.amount * CFG.groupFactor : c.amount
   const I: Inst[] = []
   const add = (id: string, status: Status, ruleId: string, reason: string, name?: string) => I.push({ id, name: name || NAMES[id], status, reason, ruleId, cost: null, mockScore: MOCK_SCORES[id] })
-  add('loan', 'allowed', 'BASE', 'Текущий вариант — база сравнения, может оказаться лучшим решением', isC1 ? 'Продление кредита' : 'Инвестиционный кредит траншами под этапы')
-  if (isC1) { add('refi', 'allowed', 'E13', 'Новый кредит на лучших условиях гасит текущий'); R('ok', 'E13', `${fmt(c.amount)} млн`, 'Рефинансирование кредитом — в сравнении рядом с продлением') }
-  if (!isC1 && c.industry === 'manuf') { add('lease', 'allowed', 'E14', 'Оборудование можно взять в лизинг вместо части кредита'); R('ok', 'E14', 'производство', 'Производство: лизинг оборудования рядом с кредитом') }
+  add('loan', 'allowed', 'BASE', isC1 ? 'Текущий кредит — база сравнения, может оказаться лучшим решением' : 'Кредит на развитие бизнеса: транши под этапы проекта', isC1 ? 'Продление текущего кредита' : 'Инвестиционный кредит')
+  const govOk = c.industry === 'manuf' || c.industry === 'infra'
   if (isC1) {
-    if (m < CFG.bondPrepMonths) {
-      add('bonds', 'consultation_only', 'E05', `До погашения ${m} мес. — меньше срока подготовки выпуска (${CFG.bondPrepMonths} мес.)`, 'Облигации')
-      R('route', 'E05', `${m} мес.`, 'Времени на выпуск не хватает → консультация вместо облигаций')
-    } else if (groupDebt >= CFG.bondMinAmount && c.termMonths >= CFG.bondMinTerm) {
-      add('bonds', 'consultation_only', 'E06', `Долг ${grp ? 'группы ' : ''}≥ ${CFG.bondMinAmount} млн ₽ и срок ≥ ${CFG.bondMinTerm} мес.: выпуск обсуждаем со специалистом`, c.bondsBefore ? 'Повторный выпуск облигаций' : grp ? 'Облигации для группы' : 'Облигации')
-      R('ok', 'E06', `${fmt(groupDebt)} млн, ${c.termMonths} мес.`, grp ? `Долг группы ≥ ${CFG.bondMinAmount} млн ₽ → консультация по облигациям через менеджера` : 'Облигации — консультация через менеджера')
-      if (c.industry === 'trade') R('ok', 'E09', 'торговля', 'Торговля: облигации не зависят от сезонности оборота')
-    } else add('bonds', 'excluded', 'E06', `Порог демо: от ${CFG.bondMinAmount} млн ₽ и от ${CFG.bondMinTerm} мес. нового срока`)
+    add('refi', 'allowed', 'E13', 'Кредит на поддержание оборотов гасит текущий на лучших условиях')
+    R('ok', 'E13', `${fmt(c.amount)} млн`, 'Оборотный кредит на новых условиях — в сравнении рядом с продлением')
+    if (m < CFG.bondPrepMonths) add('bonds', 'excluded', 'E05', `До погашения ${m} мес. — меньше срока подготовки выпуска (${CFG.bondPrepMonths} мес.)`)
+    else if (groupDebt >= CFG.bondMinAmount && c.termMonths >= CFG.bondMinTerm) {
+      add('bonds', 'consultation_only', 'E06', `Крупный долг${grp ? ' группы' : ''} (≥ ${CFG.bondMinAmount} млн ₽, срок ≥ ${CFG.bondMinTerm} мес.): выпуск обсуждаем с менеджером`, c.bondsBefore ? 'Повторный выпуск облигаций' : 'Выпуск облигаций')
+      R('route', 'E06', `${fmt(groupDebt)} млн, ${c.termMonths} мес.`, grp ? `Долг группы ≥ ${CFG.bondMinAmount} млн ₽ → консультация с менеджером по облигациям` : 'Облигации — консультация с менеджером')
+    } else add('bonds', 'excluded', 'E06', `Для крупных: от ${CFG.bondMinAmount} млн ₽ долга и от ${CFG.bondMinTerm} мес. нового срока`)
     if (c.bondsBefore) R('ok', 'E07', 'bondsBefore', 'Уже выпускали облигации → учитываем опыт в объяснении')
-    add('synd', 'excluded', 'E08', 'Синдикат — для подтверждённых проектов CAPEX')
   } else {
-    if (c.amount >= CFG.syndAmount || c.stages >= CFG.syndStages) {
-      add('synd', 'consultation_only', 'E08', `Сумма ≥ ${fmtInt(CFG.syndAmount)} млн ₽ или ≥ ${CFG.syndStages} этапов: структуру сделки готовит специалист`)
-      R('ok', 'E08', `${fmt(c.amount)} млн, ${c.stages} эт.`, 'Крупный проект → встреча со специалистом по синдикату')
-    } else add('synd', 'excluded', 'E08', 'Масштаб проекта ниже порога демо')
-    if (c.industry === 'manuf' || c.industry === 'infra') R('ok', 'E12', IND_L[c.industry], 'Производство и инфраструктура: синдикат первым в консультации')
-    if (c.industry === 'constr') {
-      add('bonds', 'excluded', 'E11', 'Строительство: применимость облигаций проверяет специалист по каждому проекту', 'Облигации под проект')
-      R('route', 'E11', 'строительство', 'Строительство → облигации только после проверки специалистом')
-    } else if (c.amount >= CFG.bondProjectConsult) {
-      add('bonds', 'consultation_only', 'E11', 'Готовность рынка не подтверждена: выпуск не гарантируем, только консультация', 'Облигации под проект')
-      R('route', 'E11', `${fmt(c.amount)} млн`, `Проект ≥ ${CFG.bondProjectConsult} млн ₽ → облигации как консультация`)
-    } else add('bonds', 'excluded', 'E11', `Проект меньше ${CFG.bondProjectConsult} млн ₽`, 'Облигации под проект')
+    if (c.industry === 'constr') { add('contract', 'allowed', 'E15', 'Работы по контрактам: кредит на исполнение контракта под этапы'); R('ok', 'E15', 'строительство', 'Строительство: контрактное финансирование рядом с инвесткредитом') }
+    if (c.industry !== 'constr' && c.amount >= CFG.bondProjectConsult) {
+      add('bonds', 'consultation_only', 'E11', `Крупный проект (≥ ${CFG.bondProjectConsult} млн ₽): выпуск обсуждаем с менеджером`, 'Выпуск облигаций под проект')
+      R('route', 'E11', `${fmt(c.amount)} млн`, `Проект ≥ ${CFG.bondProjectConsult} млн ₽ → консультация с менеджером по облигациям`)
+    } else add('bonds', 'excluded', 'E11', c.industry === 'constr' ? 'Строительство: облигации под проект не предлагаем' : `Проект меньше ${CFG.bondProjectConsult} млн ₽`, 'Выпуск облигаций под проект')
   }
-  if (c.cfa === 'confirmed') { add('cfa', 'consultation_only', 'E10', 'Возможность размещения подтверждена: только денежные ЦФА, после проверки специалистом'); R('route', 'E10', 'cfa=confirmed', 'ЦФА — консультация специалиста') }
-  else add('cfa', 'excluded', 'E10', c.cfa === 'unknown' ? 'Нет данных: «неизвестно» не разрешает ЦФА' : 'Не подходит компании')
+  if (govOk) { add('gov', 'allowed', 'E12', 'Приоритетная отрасль: проверяем соответствие госпрограмме'); R('ok', 'E12', IND_L[c.industry], 'Производство и инфраструктура: кредит по льготной ставке в сравнении') }
   if (c.refusal === 'tool') {
     I.forEach(i => { if (c.refusedTool === i.id && i.id !== 'loan') { i.status = 'excluded'; i.reason = 'Клиент отказался от этого инструмента'; i.ruleId = 'R03' } })
     R('stop', 'R03', `tool=${c.refusedTool}`, c.refusedTool === 'bonds' ? 'Отказ от облигаций → убираем только их, остальное показываем' : 'Отказ от инструмента → убираем только его, остальное показываем')

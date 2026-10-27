@@ -69,7 +69,7 @@ export default function Journey({ st, act, preset, user }: { st: St; act: (x: JA
       <button type="button" className="btn" onClick={() => { setErr(''); act({ a: 'leave' }) }}>Назад, не отправляя</button></div></>
   else if (j.scr === 'status') body = <><div className="blk hl"><h5>Запрос {st.reqs[need]?.number || ''}</h5><div className="small">Передан специалисту. Рекламное предложение по этой потребности скрыто, повторный запрос даёт тот же номер.</div></div><Home /></>
   else if (j.scr === 'handoff') body = <><div className="blk hl"><h5>Расчёт передан</h5><div className="small">{d.recipient || 'Уполномоченному'} получил сводку: ссылку в Альфа-Бизнесе и PDF с суммой, сроком и вариантами. Статус <span className="code">awaiting_review</span>.</div>
-      <div className="bonus">Спасибо! Если переданный расчёт приведёт к сделке, вы получите бонус от банка (кэшбэк или сертификат). Условия программы публичные.</div>
+      <div className="bonus">Бонус за переданный расчёт: если он привёл к сделке — кэшбэк или сертификат от банка. Условия программы публичные.</div>
       <div className="small muted" style={{ marginTop: 6 }}>Демо: переключите пользователя справа на того, у кого есть право отправки, — те же параметры откроются у него.</div></div><Home /></>
   else body = <><div className="blk"><h5>Консультация</h5><div className="small">Специалист свяжется с вами в течение рабочего дня. Расчёт не является офертой.</div></div><Home /></>
 

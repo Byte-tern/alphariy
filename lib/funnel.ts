@@ -34,14 +34,13 @@ export function generate(n = 10000, seed = 44): Co[] {
   return out
 }
 
-const CREDIT = ['loan', 'refi'] // продление и рефинансирование — варианты кредита, не альтернатива ему
 export type Fail = 'need' | 'stop' | 'alt' | 'role' | 'limit' | 'ok'
 export function classify(c: Ctx, now = '2026-10-27') {
   const needOk = c.need === 'confirmed' && (c.segment === 'C2' || (c.monthsToDue != null && c.monthsToDue <= CFG.refiMax))
   if (!needOk) return { k: 'need' as Fail }
   if (c.requestSent || ['notnow', 'unsub', 'solved'].includes(c.refusal)) return { k: 'stop' as Fail }
   const d = decide(c, now)
-  if (!d.instruments.some(i => !CREDIT.includes(i.id))) return { k: 'alt' as Fail, d }
+  if (d.instruments.length < 2) return { k: 'alt' as Fail, d }
   if (d.action === 'consult_specialist') return { k: 'role' as Fail, d }
   if (d.channelPlan.blocked) return { k: 'limit' as Fail, d }
   return { k: 'ok' as Fail, d }
@@ -72,10 +71,10 @@ export function run(n = 10000, topPct = 0.03) {
     { id: 1, title: 'Бизнес-пре-фильтр', model: 'Жёсткие правила до модели', features: 'Потребность и окно погашения, история отказов', rules: 'E01–E04, R02–R04, S01', inN: n, outN: pre.length, isNew: true },
     { id: 2, title: 'Генерация кандидатов', model: 'Look-alike банка (в демо — заглушка)', features: 'Сотни старых признаков: обороты, ОКВЭД, остатки', rules: '—', inN: pre.length, outN: cand.length, isNew: false },
     { id: 3, title: 'Ранжирование', model: 'Скор + ручные веса новых сигналов (в проде — бустинг)', features: `look-alike ${RANK_W.old}, срочность ${RANK_W.urgency}, намерение ${RANK_W.intent}`, rules: 'меняет порядок, не отсеивает', inN: cand.length, outN: cand.length, isNew: true },
-    { id: 4, title: 'Выбор инструмента', model: 'Правила применимости + сравнение', features: 'Срок, сумма, отрасль, готовность к выпуску', rules: 'E05–E14', inN: cand.length, outN: afterAlt.length, isNew: true },
+    { id: 4, title: 'Выбор инструмента', model: 'Правила применимости + сравнение', features: 'Срок, сумма, отрасль, готовность к выпуску', rules: 'E05–E15', inN: cand.length, outN: afterAlt.length, isNew: true },
     { id: 5, title: 'Пост-фильтр: адресат и лимиты', model: 'Правила ЛПР и политика контактов', features: 'Роль, права, лимиты 5/30 дн., email 1/60', rules: 'U01, P01, L01', inN: afterAlt.length, outN: fin.length, isNew: true },
   ]
-  const nonLoan = newShown.filter(x => x.d!.instruments.some(i => !CREDIT.includes(i.id))).length
+  const nonLoan = newShown.filter(x => x.d!.instruments.length > 1).length
   const routed = newShown.filter(x => x.d!.action === 'route_to_authorized_user').length
   return { n, K, stages, oldShown, oldBreak, newShown, nonLoan, routed }
 }

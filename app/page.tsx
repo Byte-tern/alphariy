@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PROFILES } from '@/data/profiles'
+import Funnel from './Funnel'
 
 const KEY = 'alfa-demo-v1', BASE = Date.parse('2026-10-27')
 const OPT: Record<string, [string, string][]> = {
@@ -18,6 +19,7 @@ export default function Page() {
   const [day, setDay] = useState(0), [mode, setMode] = useState<'after' | 'before'>('after'), [scr, setScr] = useState('home')
   const [res, setRes] = useState<Any>(null), [reqs, setReqs] = useState<Any>({}), [inbox, setInbox] = useState<Any>({})
   const [busy, setBusy] = useState(false), [err, setErr] = useState(''), [ready, setReady] = useState(false), [panel, setPanel] = useState(true)
+  const [view, setView] = useState<'path' | 'funnel'>('path')
   const P = PROFILES[pid], U = P.users.find(u => u.id === uid) || P.users[0], need = `need-${pid}`
   const now = new Date(BASE + day * 864e5).toISOString().slice(0, 10)
   const eff: Any = { ...P.ctx, ...ov }
@@ -76,7 +78,10 @@ export default function Page() {
     {err && <div className="err">{err} <button className="link" onClick={send}>Повторить</button></div>}</div>
   const Msg = ({ t, s }: { t: string; s: string }) => <div className="card"><h2>{t}</h2><p>{s}</p><button className="btn sec" onClick={() => setScr('home')}>На главную</button></div>
 
+  const Nav = <div className="card">{([['path', 'Путь клиента'], ['funnel', 'Воронка модели: до / после']] as const).map(([v, l]) => <span key={v} className={'pill' + (view === v ? ' on' : '')} onClick={() => setView(v)}>{l}</span>)}</div>
+  if (view === 'funnel') return <div style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}>{Nav}<Funnel /></div>
   return <div className="wrap"><div>
+    {Nav}
     <div className="card top"><span><b>Альфа</b>-Бизнес · {P.name.slice(4)}</span><span className="tag">учебное демо, данные вымышлены</span></div>
     <div className="card"><div className="mut">Счета · Платежи · Дела в работе · Предложения</div></div>
     {err && scr === 'home' && <div className="err">{err} <button className="link" onClick={load}>Повторить</button></div>}

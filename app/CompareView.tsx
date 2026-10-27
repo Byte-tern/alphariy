@@ -10,7 +10,7 @@ const STRUCT: Record<string, string> = { solo: 'самостоятельная',
 
 export default function CompareView() {
   return <>
-    <p className="muted" style={{ margin: '0 0 14px' }}>Две компании одного сегмента (выручка от 500 млн ₽). Сегодня оптимизатор показал бы обеим один кредит по look-alike. С новыми признаками они получают разный продукт, текст, адресата, канал и частоту.</p>
+    <p className="muted" style={{ margin: '0 0 14px' }}>Две компании среднего бизнеса. Сегодня оптимизатор показал бы обеим один кредит по look-alike. С новыми признаками они получают разный продукт, текст, адресата, канал и частоту.</p>
     <div className="cmp" id="cmp">{PAIRS.map(([pid, uid]) => {
       const p = PROFILES[pid], u = p.users.find(x => x.id === uid)!, c = buildCtx(pid, uid)!, d = decide(c, TODAY)
       const rows: [string, React.ReactNode][] = [

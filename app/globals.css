@@ -221,3 +221,4 @@ body.demo-on main{padding-bottom:220px}
 .hdr-r .demo-btn.ghostbtn{background:transparent;border:1px solid rgba(255,255,255,.6)}
 .hdr-r .demo-btn.ghostbtn:hover{background:rgba(255,255,255,.12)}
 .loading{padding:24px;color:var(--ink-2)}
+.bonus{margin-top:8px;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.35;background:#F1FBD9;border:1px solid #C9EE78}

@@ -71,10 +71,12 @@ export function OfferCard({ c, d, now, onRefuse }: { c: Ctx; d: Decision; now: s
       {gap > 0 && <div className="loss">Разница в условных расходах: до {fmt(gap)} млн ₽</div>}
       <div className="why">{d.message!.why} · <u>Настроить предложения</u></div>
       <div className="ctas"><span className="btn red">{c1}</span>{rest.map(r => <span key={r} className="link">{r}</span>)}</div>
+      {d.action === 'route_to_authorized_user' ? <div className="bonus">Сводка расчёта уйдёт уполномоченному (PDF и ссылка). <b>Если расчёт приведёт к сделке — бонус от банка.</b></div>
+        : d.action === 'show_comparison' && <div className="small muted" style={{ marginTop: 6 }}>Сравнение ни к чему не обязывает</div>}
       <div className="ctas" style={{ marginTop: 4 }}>{onRefuse
         ? <><button type="button" className="linkbtn" onClick={() => onRefuse('notnow')}>Не сейчас</button><span className="ghost">·</span><button type="button" className="linkbtn" onClick={() => onRefuse('unsub')}>Неактуально</button></>
         : <span className="ghost">Не сейчас · Неактуально</span>}</div>
-      <div className="disc">Расходы условные: сумма × ставка × срок/12 + разовые (ставки демо {Math.round(CFG.rate.loan * 100)}% / {Math.round(CFG.rate.bonds * 100)}%). Не оферта, одобрение и ставку не обещаем.</div>
+      <div className="disc">Расходы условные: сумма × ставка × срок/12 + разовые (ставки демо {Math.round(CFG.rate.loan * 100)}% / {Math.round(CFG.rate.refi * 100)}%). Не оферта, одобрение и ставку не обещаем.</div>
     </div>
     <Visual c={c} d={d} now={now} />
   </div>
